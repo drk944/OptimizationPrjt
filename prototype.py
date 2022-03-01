@@ -24,10 +24,12 @@ def anchor_con(X,*args):
 def endReached(X,xf,tau):
     for i in range(np.size(X,0)):
         if np.linalg.norm(X[i,:] - xf) <= tau:
-            return True
-    return False
+            return True, i
+    return False, 0
 
 if __name__ == '__main__':
+    plt.figure()
+
     X = np.array([
         [1,1],
         [2,2],
@@ -38,7 +40,7 @@ if __name__ == '__main__':
     args = [xf]
 
     x0 = np.array([0,0])
-    step_size = 0.5
+    step_size = 1
     con_args = [x0,step_size]
     con = (
         {'type':'eq',
@@ -47,12 +49,17 @@ if __name__ == '__main__':
     )
 
     path = np.array([x0[:]])
-    tau = 1e-2
-    while not endReached(X,xf,tau):
+    tau = 0.15
+    while True:
+        isEnd, end_index = endReached(X,xf,tau)
+        if isEnd:
+            X = X[0: end_index+1]
+            path = np.vstack([path,X])
+            break
         x = minimize(obj,X,args=args,constraints=con)
         X = x.x.reshape((int(len(x.x)/2),2))
         path = np.vstack([path,X[0,:]])
-
+        
         x0 = X[0,:]
         step_size = 1.0
         con_args = [x0,step_size]
@@ -64,8 +71,8 @@ if __name__ == '__main__':
         X = np.vstack([X[1:,:],X[-1,:]+1])
     print(X)
     print(path)
-    
-    plt.figure()
-    plt.plot(path)
-    plt.show()
+
+plt.scatter(path[:,0], path[:,1], linestyle='-', marker='o')
+# plt.plot(path)
+plt.show()
     
